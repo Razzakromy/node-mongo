@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- <script src="https://use.fontawesome.com/5effa5eccf.js"></script> -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <!-- <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/js/all.min.js"> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/js/all.min.js"
+        integrity="sha512-YSdqvJoZr83hj76AIVdOcvLWYMWzy6sJyIMic2aQz5kh2bPTd9dzY3NtdeEAzPp/PhgZqr4aJObB3ym/vsItMg=="
+        crossorigin="anonymous"></script>
+    <title>Document</title>
+</head>
+
+<body>
+    <h1>Amar Sonar Bangla</h1>
+    <div class="container">
+        <div class="row">
+            <input type="text" class="form-control" id="name" placeholder="Product Name">
+            <input type="text" class="form-control" id="price" placeholder=" Price">
+            <input type="text" class="form-control" id="stock" placeholder=" Stock">
+            <button class="btn btn-primary" id="addProduct">Add Product</button>
+        </div>
+        <p style="color: green; display: none;" id="successMessage">
+            <small> <span style="color: seagreen;">
+                    <i class="fas fa-check-circle"></i>
+                </span> Product Added Successfully </small>
+        </p>
+        <ul id="product-list">
+
+        </ul>
+    </div>
+    <p id="userName"></p>
+    <script>
+        fetch("http://localhost:4000/products")
+            .then(res => res.json())
+            .then(data => {
+                displayProducts(data)
+            })
+
+        function displayProducts(data) {
+            const productContainer = document.getElementById("product-list")
+            for (let i = 0; i < data.length; i++) {
+                const product = data[i];
+                appendProduct(product, productContainer);
+            }
+        }
+
+        function appendProduct(product, productContainer) {
+            const item = document.createElement("li");
+            item.innerText = `${product.name}:${product.price}Tk, Available ${product.stock}`;
+            productContainer.appendChild(item)
+        }
+
+        const btnUser = document.getElementById("addProduct");
+        btnUser.addEventListener("click", () => {
+            const name = document.getElementById("name").value;
+            const price = document.getElementById("price").value;
+            const stock = document.getElementById("stock").value;
+            const product = { name, price, stock }
+            // post
+            fetch("http://localhost:4000/addProduct", {
+                method: "POST",
+                body: JSON.stringify(product),
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    updateProduct(data);
+
+                    // Clean
+                    document.getElementById("name").value = '';
+                    document.getElementById("price").value = '';
+                    document.getElementById("stock").value = '';
+
+                    // ShowMessage
+
+                    const success = document.getElementById("successMessage")
+                    success.style.display = "block";
+                    setTimeout(() => {
+                        success.style.display = "none";
+                    }, 5000)
+                })
+        })
+        function updateProduct(product) {
+            document.getElementById("userName").innerText = product.name;
+            const productContainer = document.getElementById("product-list")
+            appendProduct(product, productContainer)
+
+        }
+    </script>
+</body>
+
+</html>
