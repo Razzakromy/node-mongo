@@ -3,14 +3,14 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const MongoClient = require('mongodb').MongoClient;
 const app = express();
-require('dotenv-extended').load();
+require('dotenv').config();
 
 app.use(cors());
 app.use(bodyParser.json());
 
-// const dbUser = process.env.DB_USER;
-// const pass = process.env.DB_PASS;
-// const uri = `mongodb+srv://${dbUser}:${pass}@cluster0.h1oeh.mongodb.net/<dbname>?retryWrites=true&w=majority`;
+//  const dbUser = process.env.DB_USER;
+//  const pass = process.env.DB_PASS;
+//  const uri = `mongodb+srv://${dbUser}:${pass}@cluster0.h1oeh.mongodb.net/<dbname>?retryWrites=true&w=majority`;
 const uri = process.env.DB_PATH
 let client = new MongoClient(uri, { useNewUrlParser: true });
 
@@ -20,8 +20,8 @@ let client = new MongoClient(uri, { useNewUrlParser: true });
 app.get("/products", (req, res) => {
     client = new MongoClient(uri, { useNewUrlParser: true });
     client.connect(err => {
-        const collection = client.db("OnlineMarket").collection("Product");
-        collection.find().limit(5).toArray((err, documents) => {
+        const collection = client.db("OnlineMarket").collection("products");
+        collection.find().toArray((err, documents) => {
               if(err){
                   console.log(err)
                   res.status(500).send({message:err})
@@ -39,20 +39,50 @@ app.get("/fruits/banana", (req, res) => {
 })
 
 const user = ["Asad", "Sabed", "Sohana", "Sharif", "Arif", "Al-amin"];
-app.get("/users/:id", (req, res) => {
-    const id = req.params.id;
-    console.log(req.query.sort)
-    const name = user[id];
-    res.send({ id, name });
+app.get("/products/:key", (req, res) => {
+    const key = req.params.key;
+    client = new MongoClient(uri, { useNewUrlParser: true });
+    client.connect(err => {
+        const collection = client.db("OnlineMarket").collection("products");
+        collection.find({key}).toArray((err, documents) => {
+              if(err){
+                  console.log(err)
+                  res.status(500).send({message:err})
+              }
+              else{
+                    res.send(documents)
+                  }
+              })
+        client.close();
+      });
 })
+app.post("/getProductsByKey", (req, res) => {
+    const productKeys = req.body;
+    console.log(productKeys)
+    client = new MongoClient(uri, { useNewUrlParser: true });
+    client.connect(err => {
+        const collection = client.db("OnlineMarket").collection("products");
+        collection.find({key: { $in: productKeys}}).toArray((err, documents) => {
+              if(err){
+                  console.log(err)
+                  res.status(500).send({message:err})
+              }
+              else{
+                    res.send(documents)
+                  }
+              })
+        client.close();
+      });
+    })
+
 //post
 app.post("/addProduct", (req, res) => {
    
     const product = req.body;
     client = new MongoClient(uri, { useNewUrlParser: true });
     client.connect(err => {
-        const collection = client.db("OnlineMarket").collection("Product");
-        collection.insertOne(product,(err, result)=>{
+        const collection = client.db("OnlineMarket").collection("products");
+        collection.insert(product,(err, result)=>{
               if(err){
                   console.log(err)
                   res.status(500).send({message:err})
@@ -64,5 +94,26 @@ app.post("/addProduct", (req, res) => {
         client.close();
       });
 })
+
+app.post("/orderPlaced", (req, res) => {
+   
+    const orderDetail = req.body;
+    orderDetail.orderTime = new Date();
+    client = new MongoClient(uri, { useNewUrlParser: true });
+    client.connect(err => {
+        const collection = client.db("OnlineMarket").collection("orders");
+        collection.insertOne(orderDetail,(err, result)=>{
+              if(err){
+                  console.log(err)
+                  res.status(500).send({message:err})
+              }
+              else{
+                    res.send(result.ops[0])
+                  }
+              })
+        client.close();
+      });
+})
+
 const port = process.env.PORT
 app.listen(port, () => console.log("Listening to port 4000"));
